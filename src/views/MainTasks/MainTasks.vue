@@ -32,26 +32,23 @@ const deleteTask = useMutation({
 
 const form: IReqPOSTCreateTask = reactive({
     description: '',
-    dueDate: '',
-    isComplex: false,
-    progress: 0,
-    status: 'todo',
+    status: 'pending',
     title: '',
 })
 
-const allOptions: ITaskStatus[] = ['archived', 'done', 'inProgress', 'scheduled', 'todo']
+const allOptions: ITaskStatus[] = ['done', 'inProgress', 'cancelled', 'pending']
 
 const onSubmit = () => {
-    const { description, dueDate, isComplex, progress, status, title } = form
-    createTask.mutate({ description, dueDate, isComplex, progress, status, title })
+    const { description, status, title } = form
+    createTask.mutate({ description, status, title })
 }
 </script>
 
 <template>
-    <span v-if="allTasks.data.value && allTasks.data.value?.tasks.length === 0"
+    <span v-if="allTasks.data.value && allTasks.data.value?.items.length === 0"
         >пока ничего нет</span
     >
-    <ul v-for="task in allTasks.data.value?.tasks.filter((task) => task.status !== 'archived')">
+    <ul v-for="task in allTasks.data.value?.items.filter((task) => task.status !== 'archived')">
         <li>
             <div>
                 <span>{{ task.title }}</span>
@@ -71,26 +68,11 @@ const onSubmit = () => {
         <el-form-item label="Description">
             <el-input v-model="form.description" />
         </el-form-item>
-        <el-form-item label="isComplex">
-            <el-switch v-model="form.isComplex" />
-        </el-form-item>
 
         <el-form-item label="status">
             <el-select v-model="form.status" placeholder="please select status">
                 <el-option :label="value" :value v-for="value in allOptions" />
             </el-select>
-        </el-form-item>
-
-        <el-form-item label="progress">
-            <el-slider v-model="form.progress" />
-        </el-form-item>
-        <el-form-item label="dueDate">
-            <el-date-picker
-                v-model="form.dueDate"
-                type="date"
-                placeholder="Pick a date"
-                style="width: 100%"
-            />
         </el-form-item>
         <el-form-item>
             <el-button type="primary" @click="onSubmit">Create</el-button>

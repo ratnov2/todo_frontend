@@ -17,4 +17,8 @@ export const AuthService = {
         const res = await $authConfig.post(loginUrl, data)
         return res
     },
+    async logout() {
+        const logoutUrl = prefix + '/logout'
+        return $authConfig.post(logoutUrl) as unknown as { success: boolean }
+    },
 }

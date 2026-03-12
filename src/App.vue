@@ -8,7 +8,7 @@ const checkUser = useQuery({
     queryKey: ['me'],
     queryFn: UserService.getMe,
     select(data) {
-        console.log('!!!!!!!!!!!!!!!!', data)
+        //console.log('!!!!!!!!!!!!!!!!', data)
     },
     retry: 0,
 })
@@ -19,14 +19,14 @@ const checkUser = useQuery({
 </script>
 
 <template>
-    <header>
+    <!-- <header>
         <nav>
             <RouterLink to="/">Home</RouterLink>
             <RouterLink to="/about">About</RouterLink>
             <RouterLink to="/auth">Auth</RouterLink>
             <RouterLink to="/tasks">Tasks</RouterLink>
         </nav>
-    </header>
+    </header> -->
 
     <RouterView />
 </template>
