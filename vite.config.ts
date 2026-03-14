@@ -7,24 +7,23 @@ import RadixVueResolver from 'radix-vue/resolver'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-    //vueDevTools(),
-    Components({
-      dts: true,
-      resolvers: [
-        RadixVueResolver()
+    plugins: [
+        vue(),
+        //vueDevTools(),
+        Components({
+            dts: true,
+            resolvers: [
+                RadixVueResolver(),
 
-        // RadixVueResolver({
-        //   prefix: '' // use the prefix option to add Prefix to the imported components
-        // })
-      ],
-    }),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+                // RadixVueResolver({
+                //   prefix: '' // use the prefix option to add Prefix to the imported components
+                // })
+            ],
+        }),
+    ],
+    resolve: {
+        alias: {
+            '@': fileURLToPath(new URL('./src', import.meta.url)),
+        },
     },
-  },
-  
 })
