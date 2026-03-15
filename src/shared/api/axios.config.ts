@@ -2,7 +2,7 @@ import axios, { type AxiosResponse, type CreateAxiosDefaults, type AxiosError } 
 import router from '@/router'
 
 const defaultConfig: CreateAxiosDefaults = {
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: `${import.meta.env.VITE_API_URL}/api`,
 }
 
 export const $authConfig = axios.create({
