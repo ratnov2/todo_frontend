@@ -42,6 +42,7 @@
                     @task-toggle="handleTaskToggle"
                     @progress-update="handleProgressUpdate"
                     @series-complete="handleSeriesComplete"
+                    @cancel-task="handleCancelTask"
                 />
             </main>
         </div>
@@ -368,15 +369,34 @@ const completeScheduledTaskMutation = useMutation({
     },
 })
 
-const updateProgressMutation = useMutation({
-    mutationKey: ['updateProgress'],
-    // TODO: wire to real progress update endpoint when it appears
-    mutationFn: async () => {
-        // This would call an update API endpoint
-        await tasksQuery.refetch()
+const cancelTaskMutation = useMutation({
+    mutationKey: ['cancelTask'],
+    mutationFn: async (data: { taskId: number }) => {
+        await TaskService.updateTask({
+            id: data.taskId,
+            status: 'cancelled',
+        })
     },
     onSuccess: () => {
         tasksQuery.refetch()
+        statsQuery.refetch()
+    },
+})
+
+const updateProgressMutation = useMutation({
+    mutationKey: ['updateProgress'],
+    mutationFn: async (data: { taskId: number; value: number }) => {
+        await TaskService.addProgressEntry({
+            taskId: data.taskId,
+            dto: {
+                amount: data.value - (tasks.value.find((t) => t.id === data.taskId)?.progressEntries
+                    ?.reduce((sum, e) => sum + e.amount, 0) ?? 0),
+            },
+        })
+    },
+    onSuccess: () => {
+        tasksQuery.refetch()
+        statsQuery.refetch()
     },
 })
 
@@ -384,12 +404,16 @@ function handleTaskToggle(payload: { taskId: number; checked: boolean }) {
     updateTaskMutation.mutate(payload)
 }
 
-function handleProgressUpdate() {
-    updateProgressMutation.mutate()
+function handleProgressUpdate(payload: { taskId: number; value: number }) {
+    updateProgressMutation.mutate(payload)
 }
 
 function handleSeriesComplete(payload: { taskId: number }) {
     completeScheduledTaskMutation.mutate(payload)
+}
+
+function handleCancelTask(payload: { taskId: number }) {
+    cancelTaskMutation.mutate(payload)
 }
 </script>
 

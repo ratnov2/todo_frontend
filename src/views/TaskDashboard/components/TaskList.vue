@@ -10,6 +10,7 @@
             @task-toggle="$emit('task-toggle', $event)"
             @progress-update="$emit('progress-update', $event)"
             @series-complete="$emit('series-complete', $event)"
+            @cancel-task="$emit('cancel-task', $event)"
         />
     </div>
 </template>
@@ -28,6 +29,7 @@ defineEmits<{
     (e: 'task-toggle', payload: { taskId: number; checked: boolean }): void
     (e: 'progress-update', payload: { taskId: number; value: number }): void
     (e: 'series-complete', payload: { taskId: number }): void
+    (e: 'cancel-task', payload: { taskId: number }): void
 }>()
 </script>
 

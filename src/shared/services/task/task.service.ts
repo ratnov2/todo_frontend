@@ -11,6 +11,7 @@ import type {
     IResGETTasksStats,
     IResPATCHTaskInstance,
     IResGETTaskInstanceStats,
+    IReqPOSTAddProgressEntry,
 } from './task.types'
 
 const prefix = 'tasks'
@@ -55,5 +56,9 @@ export const TaskService = {
     async getTaskStats(id: number) {
         const url = `${prefix}/${id}/stats`
         return $authConfig.get(url) as unknown as IResGETTaskInstanceStats
+    },
+    async addProgressEntry({ taskId, dto }: IReqPOSTAddProgressEntry) {
+        const url = `${prefix}/${taskId}/progress/entries`
+        return $authConfig.post(url, dto)
     },
 }

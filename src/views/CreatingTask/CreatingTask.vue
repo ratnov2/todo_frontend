@@ -248,8 +248,19 @@
                         </div>
                     </template>
 
-                    <!-- PROGRESSIVE Type -->
-                    <template v-if="form.type === 'PROGRESSIVE'">
+                    <!-- PROGRESSIVE Settings (optional for any type) -->
+                    <div :class="$style.formGroup">
+                        <label :class="$style.checkboxLabel">
+                            <input
+                                v-model="isProgressiveEnabled"
+                                type="checkbox"
+                                :class="$style.checkbox"
+                            />
+                            <span>Add progress tracking</span>
+                        </label>
+                    </div>
+
+                    <template v-if="isProgressiveEnabled">
                         <h2 :class="$style.sectionTitle">Progress Settings</h2>
 
                         <div :class="$style.formGroup">
@@ -280,11 +291,13 @@
                             <label :class="$style.label"
                                 >Unit <span :class="$style.required">*</span></label
                             >
-                            <select v-model="progress.unit" :class="$style.select">
-                                <option value="steps">Steps</option>
-                                <option value="pages">Pages</option>
-                                <option value="points">Points</option>
-                            </select>
+                            <input
+                                v-model="progress.unit"
+                                type="text"
+                                :class="[$style.input, !progress.unit && $style.error]"
+                                placeholder="e.g. steps, pages, km"
+                                @input="validateForm"
+                            />
                         </div>
 
                         <div :class="$style.formGroup">
@@ -366,7 +379,7 @@
                             </div>
                         </template>
 
-                        <template v-if="form.type === 'PROGRESSIVE' && progress.targetValue">
+                        <template v-if="isProgressiveEnabled && progress.targetValue">
                             <div :class="$style.previewItem">
                                 <strong>Target:</strong> {{ progress.targetValue }}
                                 {{ progress.unit }}
@@ -400,7 +413,7 @@ import type {
     TaskType,
     ITask,
 } from '@/shared/services/task/task.types'
-import { IconX, IconCheck, IconCalendar, IconAlertCircle, IconChartBar } from '@tabler/icons-vue'
+import { IconX, IconCheck, IconCalendar, IconAlertCircle } from '@tabler/icons-vue'
 import DatePicker from '@/components/ui/DatePicker.vue'
 
 const router = useRouter()
@@ -413,7 +426,6 @@ const taskTypes = [
     { value: 'ONCE', label: 'Once', icon: IconCheck },
     { value: 'SCHEDULED', label: 'Scheduled', icon: IconCalendar },
     { value: 'DEADLINE', label: 'Deadline', icon: IconAlertCircle },
-    { value: 'PROGRESSIVE', label: 'Progressive', icon: IconChartBar },
 ]
 
 const taskStatuses: ITaskStatus[] = ['pending', 'inProgress', 'done', 'cancelled']
@@ -443,6 +455,8 @@ const progress = reactive<ICreateTaskProgressDto>({
     aggregation: 'TOTAL',
     isCumulative: true,
 })
+
+const isProgressiveEnabled = ref(false)
 
 const repeatMode = ref<'daysOfWeek' | 'dayOfMonth' | 'cron'>('daysOfWeek')
 const scheduledDate = ref('')
@@ -485,11 +499,6 @@ watch(
             form.scheduledFor = undefined
             deadlineDate.value = ''
             deadlineTime.value = ''
-        } else if (newType === 'PROGRESSIVE') {
-            progress.targetValue = 0
-            progress.unit = 'steps'
-            progress.aggregation = 'TOTAL'
-            progress.isCumulative = true
         } else if (newType === 'ONCE') {
             form.scheduledFor = undefined
         }
@@ -511,7 +520,7 @@ const isFormValid = computed(() => {
         return !!form.scheduledFor
     }
 
-    if (form.type === 'PROGRESSIVE') {
+    if (isProgressiveEnabled.value) {
         return progress.targetValue > 0 && !!progress.unit && !!progress.aggregation
     }
 
@@ -587,20 +596,21 @@ function populateFormFromTask(task: ITask) {
 
     if (task.type === 'SCHEDULED' && task.schedules && task.schedules.length > 0) {
         const scheduleData = task.schedules[0]
-        if (scheduleData.runAt) {
+        if (scheduleData?.runAt) {
             const date = new Date(scheduleData.runAt)
             scheduledDate.value = date.toISOString().split('T')[0] || ''
             schedule.runAt = scheduleData.runAt
         }
-        schedule.timeOfDay = scheduleData.timeOfDay
-        schedule.daysOfWeek = scheduleData.daysOfWeek
-        schedule.dayOfMonth = scheduleData.dayOfMonth
-        schedule.cronExpression = scheduleData.cronExpression
+        schedule.timeOfDay = scheduleData?.timeOfDay
+        schedule.daysOfWeek = scheduleData?.daysOfWeek
+        schedule.dayOfMonth = scheduleData?.dayOfMonth
+        schedule.cronExpression = scheduleData?.cronExpression
     }
 
-    if (task.type === 'PROGRESSIVE' && task.progressMeta) {
+    if (task.progressMeta) {
+        isProgressiveEnabled.value = true
         progress.targetValue = task.progressMeta.targetValue
-        progress.unit = task.progressMeta.unit as 'steps' | 'pages' | 'points'
+        progress.unit = task.progressMeta.unit || ''
         progress.aggregation = task.progressMeta.aggregation as 'TOTAL' | 'DAILY' | 'LATEST'
         progress.isCumulative = task.progressMeta.isCumulative
     }
@@ -723,7 +733,7 @@ function handleSubmit() {
 
     if (isEditMode.value) {
         const payload: IReqPUTUpdateTask = {
-            id: taskId.value,
+            id: Number(taskId.value),
             title: form.title,
             description: form.description || undefined,
             type: form.type,
@@ -739,7 +749,7 @@ function handleSubmit() {
             payload.schedule = { ...schedule }
         }
 
-        if (form.type === 'PROGRESSIVE') {
+        if (isProgressiveEnabled.value) {
             payload.progress = { ...progress }
         }
 
@@ -761,7 +771,7 @@ function handleSubmit() {
             payload.schedule = { ...schedule }
         }
 
-        if (form.type === 'PROGRESSIVE') {
+        if (isProgressiveEnabled.value) {
             payload.progress = { ...progress }
         }
 

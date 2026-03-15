@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { AuthService } from '@/shared/services/auth/Auth.types'
 import { useMutation, useQueryClient } from '@tanstack/vue-query'
 import { ElMessage } from 'element-plus'
 
 import { ref } from 'vue'
+
+const router = useRouter()
 
 const form = ref({ email: '', password: '' })
 const isLogin = ref(true)
@@ -28,7 +31,7 @@ const login = useMutation({
     },
     onSuccess() {
         queryClient.invalidateQueries({ queryKey: ['me'] })
-        // checkUser.mutate()
+        router.push({ name: 'home' })
     },
 })
 

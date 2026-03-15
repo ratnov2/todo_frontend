@@ -64,7 +64,7 @@ export interface ITaskInstance {
 
 export interface ICreateTaskProgressDto {
     targetValue: number
-    unit: 'steps' | 'pages' | 'points'
+    unit: string
     aggregation: 'TOTAL' | 'DAILY' | 'LATEST'
     isCumulative?: boolean // Default: true
 }
@@ -75,6 +75,11 @@ export interface ICreateProgressEntryDto {
     groupDate?: string // ISO date string
     note?: string
     taskProgressId?: number
+}
+
+export interface IReqPOSTAddProgressEntry {
+    taskId: number
+    dto: ICreateProgressEntryDto
 }
 
 export interface IReqPUTUpdateTask {

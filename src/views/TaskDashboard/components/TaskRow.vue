@@ -8,54 +8,62 @@
         />
 
         <div
-            :class="[$style.card, level > 0 && $style.nested, isScheduledTask && $style.scheduledCard]"
+            :class="[
+                $style.card,
+                level > 0 && $style.nested,
+                isScheduledTask && $style.scheduledCard,
+                isInstanceCompleted && $style.completedCard,
+            ]"
             :style="{ paddingLeft: `${level * 32}px` }"
         >
             <div :class="$style.content">
                 <div :class="$style.row">
                     <!-- Expand / Collapse -->
-                    <div :class="$style.expand">
-                        <button
-                            v-if="hasSubtasks && showSubtasks"
-                            :class="$style.expandButton"
-                            @click="isExpanded = !isExpanded"
-                        >
+                    <div v-if="hasSubtasks && showSubtasks" :class="$style.expand">
+                        <button :class="$style.expandButton" @click="isExpanded = !isExpanded">
                             <IconChevronRight :size="16" :class="[isExpanded && $style.rotated]" />
                         </button>
                     </div>
 
-                    <!-- Checkbox -->
-                    <input
-                        :class="[$style.checkbox, isScheduledTask && $style.checkboxScheduled]"
-                        type="checkbox"
-                        :checked="isInstanceCompleted"
-                        :title="checkboxTitle"
-                        @click="toggleCheckbox"
-                    />
-
                     <!-- Task content -->
                     <div :class="$style.body">
                         <div :class="$style.header">
-                            <div v-if="isScheduledTask" :class="$style.recurringBadge">
-                                <span :class="$style.recurringDot" />
-                                <span>Повторяющаяся задача</span>
-                            </div>
-                            <h3
+                            <!-- Checkbox inside header -->
+                            <input
                                 :class="[
-                                    $style.title,
-                                    isTaskCompleted && $style.done,
-                                    isInstanceCompleted && !isTaskCompleted && $style.instanceDone,
+                                    $style.checkbox,
+                                    isScheduledTask && $style.checkboxScheduled,
                                 ]"
-                            >
-                                {{ task.title }}
-                            </h3>
-                            <span v-if="hasSubtasks" :class="$style.subtasksBadge">
-                                {{ task.nestedSubtasksCount ?? 0 }}
-                            </span>
-                            <PriorityIndicator
-                                v-if="task.priority !== undefined"
-                                :priority="task.priority"
+                                type="checkbox"
+                                :checked="isInstanceCompleted"
+                                :title="checkboxTitle"
+                                @click="toggleCheckbox"
                             />
+
+                            <div :class="$style.headerMain">
+                                <div v-if="isScheduledTask" :class="$style.recurringBadge">
+                                    <span :class="$style.recurringDot" />
+                                    <span>Повторяющаяся задача</span>
+                                </div>
+                                <h3
+                                    :class="[
+                                        $style.title,
+                                        isTaskCompleted && $style.done,
+                                        isInstanceCompleted &&
+                                            !isTaskCompleted &&
+                                            $style.instanceDone,
+                                    ]"
+                                >
+                                    {{ task.title }}
+                                </h3>
+                                <span v-if="hasSubtasks" :class="$style.subtasksBadge">
+                                    {{ task.nestedSubtasksCount ?? 0 }}
+                                </span>
+                                <PriorityIndicator
+                                    v-if="task.priority !== undefined"
+                                    :priority="task.priority"
+                                />
+                            </div>
                         </div>
 
                         <div :class="$style.meta">
@@ -104,15 +112,7 @@
                             <div
                                 v-if="task.type === 'SCHEDULED' && task.currentInstance"
                                 :class="$style.instanceMeta"
-                            >
-                                <span :class="$style.instanceBadge">
-                                    Текущая итерация:
-                                    {{ formatDateTime(task.currentInstance.occurrenceAt) }}
-                                </span>
-                                <span v-if="task.currentInstance.dueAt" :class="$style.instanceDue">
-                                    до {{ formatDateTime(task.currentInstance.dueAt) }}
-                                </span>
-                            </div>
+                            ></div>
                         </div>
 
                         <!-- Task Instance Stats -->
@@ -132,7 +132,9 @@
                                             <IconCircleCheck :size="18" />
                                         </div>
                                         <div :class="$style.statInfo">
-                                            <span :class="$style.statValue">{{ taskStats.done }}</span>
+                                            <span :class="$style.statValue">{{
+                                                taskStats.done
+                                            }}</span>
                                             <span :class="$style.statLabel">Выполнено</span>
                                         </div>
                                     </div>
@@ -141,7 +143,9 @@
                                             <IconCircleX :size="18" />
                                         </div>
                                         <div :class="$style.statInfo">
-                                            <span :class="$style.statValue">{{ taskStats.failed }}</span>
+                                            <span :class="$style.statValue">{{
+                                                taskStats.failed
+                                            }}</span>
                                             <span :class="$style.statLabel">Провалено</span>
                                         </div>
                                     </div>
@@ -150,7 +154,9 @@
                                             <IconClockOff :size="18" />
                                         </div>
                                         <div :class="$style.statInfo">
-                                            <span :class="$style.statValue">{{ taskStats.missed }}</span>
+                                            <span :class="$style.statValue">{{
+                                                taskStats.missed
+                                            }}</span>
                                             <span :class="$style.statLabel">Пропущено</span>
                                         </div>
                                     </div>
@@ -228,19 +234,35 @@
                         </div>
 
                         <!-- Progress Meta Section -->
-                        <div
-                            v-if="task.type === 'PROGRESSIVE' && task.progressMeta"
-                            :class="$style.progressSection"
-                        >
+                        <div v-if="task.progressMeta" :class="$style.progressSection">
                             <div :class="$style.progressMetaCard">
                                 <div :class="$style.progressHeader">
                                     <div :class="$style.progressInfo">
                                         <span :class="$style.progressLabel">Progress</span>
-                                        <span :class="$style.progressValue">
-                                            {{ currentProgress }} /
-                                            {{ task.progressMeta.targetValue }}
-                                            {{ task.progressMeta.unit }}
-                                        </span>
+                                        <div :class="$style.progressMainRow">
+                                            <span
+                                                :class="[
+                                                    $style.progressValue,
+                                                    isOverTarget && $style.progressValueOver,
+                                                ]"
+                                            >
+                                                {{ currentProgress }}
+                                            </span>
+                                            <span :class="$style.progressSeparator">/</span>
+                                            <span :class="$style.progressTarget">
+                                                {{ task.progressMeta.targetValue }}
+                                                {{ task.progressMeta.unit }}
+                                            </span>
+                                            <span
+                                                v-if="task.progressMeta.targetValue"
+                                                :class="[
+                                                    $style.multiplierBadge,
+                                                    isOverTarget && $style.multiplierOver,
+                                                ]"
+                                            >
+                                                ×{{ progressMultiplier.toFixed(1) }}
+                                            </span>
+                                        </div>
                                     </div>
                                     <div :class="$style.progressMeta">
                                         <span :class="$style.metaBadge">{{
@@ -260,32 +282,54 @@
                                     ></div>
                                 </div>
 
-                                <!-- Add Progress Buttons -->
-                                <div :class="$style.addProgressButtons">
-                                    <button
-                                        :class="$style.addButton"
-                                        @click="handleAddProgress(1)"
-                                        :disabled="isAddingProgress"
-                                    >
-                                        <IconPlus :size="14" />
-                                        <span>+1</span>
-                                    </button>
-                                    <button
-                                        :class="$style.addButton"
-                                        @click="handleAddProgress(5)"
-                                        :disabled="isAddingProgress"
-                                    >
-                                        <IconPlus :size="14" />
-                                        <span>+5</span>
-                                    </button>
-                                    <button
-                                        :class="$style.addButton"
-                                        @click="handleAddProgress(10)"
-                                        :disabled="isAddingProgress"
-                                    >
-                                        <IconPlus :size="14" />
-                                        <span>+10</span>
-                                    </button>
+                                <!-- Add Progress Controls -->
+                                <div :class="$style.addProgressControls">
+                                    <div :class="$style.addProgressButtons">
+                                        <button
+                                            :class="$style.addButton"
+                                            @click="handleAddProgress(1)"
+                                            :disabled="isAddingProgress"
+                                        >
+                                            <IconPlus :size="14" />
+                                            <span>+1</span>
+                                        </button>
+                                        <button
+                                            :class="$style.addButton"
+                                            @click="handleAddProgress(5)"
+                                            :disabled="isAddingProgress"
+                                        >
+                                            <IconPlus :size="14" />
+                                            <span>+5</span>
+                                        </button>
+                                        <button
+                                            :class="$style.addButton"
+                                            @click="handleAddProgress(10)"
+                                            :disabled="isAddingProgress"
+                                        >
+                                            <IconPlus :size="14" />
+                                            <span>+10</span>
+                                        </button>
+                                    </div>
+                                    <div :class="$style.customProgress">
+                                        <input
+                                            v-model.number="customAmount"
+                                            type="number"
+                                            :class="$style.customInput"
+                                            placeholder="+ / -"
+                                        />
+                                        <button
+                                            :class="$style.addButton"
+                                            @click="handleAddCustomProgress"
+                                            :disabled="
+                                                isAddingProgress ||
+                                                customAmount === null ||
+                                                customAmount === 0
+                                            "
+                                        >
+                                            <IconPlus :size="14" />
+                                            <span>Add</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
 
@@ -319,7 +363,11 @@
                             <span>Created {{ formatDate(task.createdAt) }}</span>
                             <div :class="$style.footerActions">
                                 <button
-                                    :class="[$style.statsButton, showStats && $style.statsButtonActive]"
+                                    v-if="!!task.currentInstance"
+                                    :class="[
+                                        $style.statsButton,
+                                        showStats && $style.statsButtonActive,
+                                    ]"
                                     @click="toggleStats"
                                     :title="showStats ? 'Скрыть статистику' : 'Показать статистику'"
                                 >
@@ -327,7 +375,7 @@
                                     <span>Статистика</span>
                                 </button>
                                 <button
-                                    v-if="isScheduledTask"
+                                    v-if="isScheduledTask && !!task.currentInstance"
                                     :class="$style.seriesButton"
                                     type="button"
                                     @click="onSeriesCompleteClick"
@@ -335,6 +383,15 @@
                                 >
                                     <IconAlertTriangle :size="14" />
                                     <span>Завершить задачу</span>
+                                </button>
+                                <button
+                                    v-if="task.status !== 'cancelled'"
+                                    :class="$style.cancelButton"
+                                    type="button"
+                                    @click="handleCancel"
+                                    title="Отменить задачу"
+                                >
+                                    <IconCircleX :size="14" />
                                 </button>
                                 <button :class="$style.editButton" @click="handleEdit">
                                     <IconEdit :size="14" />
@@ -373,6 +430,41 @@
                                 </div>
                             </div>
                         </Transition>
+
+                        <!-- Cancel task confirm -->
+                        <Transition name="series-confirm">
+                            <div
+                                v-if="showCancelConfirm"
+                                :class="[$style.seriesConfirm, $style.cancelConfirm]"
+                            >
+                                <div :class="$style.seriesConfirmText">
+                                    <span :class="$style.seriesConfirmTitle">
+                                        Отменить эту задачу?
+                                    </span>
+                                    <span :class="$style.seriesConfirmSubtitle">
+                                        Задача будет помечена как отменённая (cancelled) и больше не
+                                        будет учитываться в активных.
+                                    </span>
+                                </div>
+                                <div :class="$style.seriesConfirmActions">
+                                    <button
+                                        type="button"
+                                        :class="$style.seriesCancelButton"
+                                        @click="cancelCancel"
+                                    >
+                                        Оставить как есть
+                                    </button>
+                                    <button
+                                        type="button"
+                                        :class="$style.seriesDangerButton"
+                                        @click="confirmCancel"
+                                    >
+                                        Да, отменить задачу
+                                    </button>
+                                </div>
+                            </div>
+                        </Transition>
+
                     </div>
                 </div>
             </div>
@@ -389,6 +481,7 @@
                     :level="level + 1"
                     @task-toggle="$emit('task-toggle', $event)"
                     @progress-update="$emit('progress-update', $event)"
+                    @cancel-task="$emit('cancel-task', $event)"
                 />
             </div>
         </Transition>
@@ -432,16 +525,19 @@ const emit = defineEmits<{
     (e: 'task-toggle', payload: { taskId: number; checked: boolean }): void
     (e: 'progress-update', payload: { taskId: number; value: number }): void
     (e: 'series-complete', payload: { taskId: number }): void
+    (e: 'cancel-task', payload: { taskId: number }): void
 }>()
 
 const isExpanded = ref(false)
 const isAddingProgress = ref(false)
+const customAmount = ref<number | null>(null)
 const currentTime = ref(new Date())
 const showStats = ref(false)
 const statsLoading = ref(false)
 const statsError = ref(false)
 const taskStats = ref<IResGETTaskInstanceStats | null>(null)
 const showSeriesConfirm = ref(false)
+const showCancelConfirm = ref(false)
 
 let timerInterval: number | null = null
 
@@ -511,6 +607,13 @@ const progressPercentage = computed(() => {
     return Math.min((currentProgress.value / props.task.progressMeta.targetValue) * 100, 100)
 })
 
+const progressMultiplier = computed(() => {
+    if (!props.task.progressMeta || !props.task.progressMeta.targetValue) return 0
+    return currentProgress.value / props.task.progressMeta.targetValue
+})
+
+const isOverTarget = computed(() => progressMultiplier.value >= 1)
+
 function handleAddProgress(amount: number) {
     if (!props.task.progressMeta) return
 
@@ -527,6 +630,12 @@ function handleAddProgress(amount: number) {
     setTimeout(() => {
         isAddingProgress.value = false
     }, 500)
+}
+
+function handleAddCustomProgress() {
+    if (customAmount.value === null || customAmount.value === 0) return
+    handleAddProgress(customAmount.value)
+    customAmount.value = null
 }
 
 async function toggleStats() {
@@ -561,21 +670,24 @@ function confirmSeriesComplete() {
     showSeriesConfirm.value = false
 }
 
+function handleCancel() {
+    showCancelConfirm.value = true
+}
+
+function cancelCancel() {
+    showCancelConfirm.value = false
+}
+
+function confirmCancel() {
+    emit('cancel-task', { taskId: props.task.id })
+    showCancelConfirm.value = false
+}
+
 function formatDate(date: string | Date) {
     return new Date(date).toLocaleDateString('en-US', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
-    })
-}
-
-function formatDateTime(date: string | Date) {
-    return new Date(date).toLocaleString('ru-RU', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
     })
 }
 
@@ -745,6 +857,33 @@ function handleEdit() {
         0 4px 16px rgba(99, 102, 241, 0.15);
 }
 
+.completedCard {
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
+    border-color: rgba(60, 60, 60, 0.9);
+    box-shadow: none;
+    filter: grayscale(0.9);
+    opacity: 0.85;
+}
+
+.completedCard:hover {
+    border-color: rgba(60, 60, 60, 1);
+    background: linear-gradient(135deg, #050505 0%, #050505 100%);
+    transform: none;
+    box-shadow: none;
+}
+
+/* Keep progress section vivid for completed tasks */
+.completedCard .progressSection,
+.completedCard .progressMetaCard,
+.completedCard .progressBarFill,
+.completedCard .addButton,
+.completedCard .customInput,
+.completedCard .progressValue,
+.completedCard .multiplierBadge {
+    filter: none;
+    opacity: 1;
+}
+
 .card:hover::before {
     opacity: 1;
 }
@@ -847,9 +986,17 @@ function handleEdit() {
 
 .header {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     margin-bottom: 10px;
+}
+
+.headerMain {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
 }
 
 .recurringBadge {
@@ -904,8 +1051,8 @@ function handleEdit() {
 
 .done {
     text-decoration: line-through;
-    color: #777;
-    opacity: 0.7;
+    color: #a1a1a1;
+    opacity: 0.9;
 }
 
 .instanceDone {
@@ -1027,9 +1174,55 @@ function handleEdit() {
 }
 
 .progressValue {
-    font-size: 18px;
-    font-weight: 700;
-    color: #f5f5f5;
+    font-size: 20px;
+    font-weight: 800;
+    color: #e5e7eb;
+    font-variant-numeric: tabular-nums;
+}
+
+.progressValueOver {
+    background: linear-gradient(120deg, #4ade80, #22c55e, #a3e635);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+
+.progressMainRow {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.progressSeparator {
+    font-size: 16px;
+    color: #9ca3af;
+}
+
+.progressTarget {
+    font-size: 14px;
+    color: #9ca3af;
+}
+
+.multiplierBadge {
+    margin-left: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.18);
+    border: 1px solid rgba(59, 130, 246, 0.6);
+    font-size: 11px;
+    font-weight: 600;
+    color: #bfdbfe;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.multiplierOver {
+    background: rgba(22, 163, 74, 0.18);
+    border-color: rgba(34, 197, 94, 0.8);
+    color: #bbf7d0;
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
 }
 
 .progressMeta {
@@ -1121,6 +1314,35 @@ function handleEdit() {
 .addButton:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+.addProgressControls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.customProgress {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.customInput {
+    width: 80px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(42, 42, 42, 0.8);
+    background: rgba(15, 15, 15, 0.9);
+    color: #f5f5f5;
+    font-size: 13px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.customInput:focus {
+    border-color: rgba(99, 102, 241, 0.7);
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.4);
 }
 
 .progressEntries {
@@ -1549,6 +1771,50 @@ function handleEdit() {
     box-shadow:
         0 6px 16px rgba(248, 113, 113, 0.6),
         0 0 0 1px rgba(127, 29, 29, 0.8);
+}
+
+.cancelConfirm {
+    border-color: rgba(148, 163, 184, 0.6);
+    background: radial-gradient(circle at 0% 0%, rgba(148, 163, 184, 0.18), rgba(15, 23, 42, 0.96));
+}
+
+.cancelConfirm .seriesConfirmTitle {
+    color: #e5e7eb;
+}
+
+.cancelConfirm .seriesConfirmSubtitle {
+    color: #cbd5f5;
+}
+
+.cancelConfirm .seriesDangerButton {
+    background: linear-gradient(135deg, #4b5563, #ef4444);
+}
+
+.cancelButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: radial-gradient(circle at 0% 0%, rgba(148, 163, 184, 0.16), transparent 55%);
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.cancelButton:hover {
+    border-color: rgba(248, 113, 113, 0.7);
+    background:
+        radial-gradient(circle at 0% 0%, rgba(248, 113, 113, 0.18), transparent 55%),
+        rgba(15, 15, 15, 0.9);
+    color: #fecaca;
+    box-shadow:
+        0 4px 12px rgba(15, 23, 42, 0.6),
+        0 0 0 1px rgba(127, 29, 29, 0.4);
+    transform: translateY(-1px);
 }
 
 /* Stats Panel */
