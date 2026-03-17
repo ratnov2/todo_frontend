@@ -5,6 +5,19 @@
                 <h2 :class="$style.title">Сегодняшние задачи</h2>
                 <p :class="$style.subtitle">{{ todayLabel }}</p>
             </div>
+
+            <div :class="$style.gridControls">
+                <span :class="$style.gridLabel">Колонки</span>
+                <button
+                    v-for="n in [1, 2, 3, 4]"
+                    :key="n"
+                    type="button"
+                    :class="[$style.gridButton, columns === n && $style.gridButtonActive]"
+                    @click="setColumns(n)"
+                >
+                    {{ n }}
+                </button>
+            </div>
         </header>
 
         <div v-if="tasksQuery.isLoading.value" :class="$style.loading">
@@ -20,6 +33,8 @@
             :tasks="tasks"
             :show-subtasks="showSubtasks"
             :telegram-enabled="isTelegramEnabled"
+            :columns="columns"
+            compact
             @task-toggle="handleTaskToggle"
             @progress-update="handleProgressUpdate"
             @series-complete="handleSeriesComplete"
@@ -28,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useMutation, useQuery } from '@tanstack/vue-query'
 import TaskList from '@/views/TaskDashboard/components/TaskList.vue'
 import { TaskService } from '@/shared/services/task/task.service'
@@ -47,6 +62,21 @@ const props = defineProps<{
 }>()
 
 const showSubtasks = computed(() => props.showSubtasks ?? true)
+
+const columns = ref(1)
+
+onMounted(() => {
+    const stored = window.localStorage.getItem('homeTasksColumns')
+    const parsed = stored ? Number(stored) : NaN
+    if (parsed >= 1 && parsed <= 4) {
+        columns.value = parsed
+    }
+})
+
+function setColumns(n: number) {
+    columns.value = n
+    window.localStorage.setItem('homeTasksColumns', String(n))
+}
 
 const todayLabel = computed(() => {
     const today = new Date()
@@ -271,15 +301,24 @@ const completeScheduledTaskMutation = useMutation({
 
 const updateProgressMutation = useMutation({
     mutationKey: ['updateProgress'],
-    mutationFn: async (data: { taskId: number; value: number }) => {
+    mutationFn: async (data: { taskId: number; value: number; instanceId?: number }) => {
+        const task = tasks.value.find((t) => t.id === data.taskId)
+
+        const currentTotal = (() => {
+            if (data.instanceId && task?.currentInstance) {
+                if (typeof task.currentInstance.progressTotal === 'number') {
+                    return task.currentInstance.progressTotal
+                }
+                return task.currentInstance.progressEntries?.reduce((sum, e) => sum + e.amount, 0) ?? 0
+            }
+            return task?.progressEntries?.reduce((sum, e) => sum + e.amount, 0) ?? 0
+        })()
+
         await TaskService.addProgressEntry({
             taskId: data.taskId,
             dto: {
-                amount:
-                    data.value -
-                    (tasks.value
-                        .find((t) => t.id === data.taskId)
-                        ?.progressEntries?.reduce((sum, e) => sum + e.amount, 0) ?? 0),
+                amount: data.value - currentTotal,
+                taskInstanceId: data.instanceId,
             },
         })
     },
@@ -292,7 +331,7 @@ function handleTaskToggle(payload: { taskId: number; checked: boolean }) {
     updateTaskMutation.mutate(payload)
 }
 
-function handleProgressUpdate(payload: { taskId: number; value: number }) {
+function handleProgressUpdate(payload: { taskId: number; value: number; instanceId?: number }) {
     updateProgressMutation.mutate(payload)
 }
 
@@ -311,6 +350,48 @@ function handleSeriesComplete(payload: { taskId: number }) {
     align-items: baseline;
     justify-content: space-between;
     margin-bottom: 16px;
+}
+
+.gridControls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(20, 20, 20, 0.9);
+    border: 1px solid rgba(55, 65, 81, 0.7);
+}
+
+.gridLabel {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #9ca3af;
+}
+
+.gridButton {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.gridButton:hover {
+    background: rgba(55, 65, 81, 0.7);
+    color: #e5e7eb;
+}
+
+.gridButtonActive {
+    background: #6366f1;
+    color: #f9fafb;
 }
 
 .title {

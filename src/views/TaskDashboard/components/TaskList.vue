@@ -1,5 +1,15 @@
 <template>
-    <div :class="$style.list">
+    <div
+        :class="$style.list"
+        :style="
+            columns && columns > 1
+                ? {
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                  }
+                : undefined
+        "
+    >
         <TaskRow
             v-for="task in tasks"
             :key="task.id"
@@ -7,6 +17,7 @@
             :show-subtasks="showSubtasks"
             :level="0"
             :telegram-enabled="telegramEnabled"
+            :compact="compact"
             @task-toggle="$emit('task-toggle', $event)"
             @progress-update="$emit('progress-update', $event)"
             @series-complete="$emit('series-complete', $event)"
@@ -23,6 +34,8 @@ defineProps<{
     tasks: Task[]
     showSubtasks: boolean
     telegramEnabled: boolean
+    compact?: boolean
+    columns?: number
 }>()
 
 defineEmits<{

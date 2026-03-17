@@ -19,7 +19,7 @@
             <div :class="$style.content">
                 <div :class="$style.row">
                     <!-- Expand / Collapse -->
-                    <div v-if="hasSubtasks && showSubtasks" :class="$style.expand">
+                    <div v-if="!compact && hasSubtasks && showSubtasks" :class="$style.expand">
                         <button :class="$style.expandButton" @click="isExpanded = !isExpanded">
                             <IconChevronRight :size="16" :class="[isExpanded && $style.rotated]" />
                         </button>
@@ -41,7 +41,10 @@
                             />
 
                             <div :class="$style.headerMain">
-                                <div v-if="isScheduledTask" :class="$style.recurringBadge">
+                                <div
+                                    v-if="!compact && isScheduledTask"
+                                    :class="$style.recurringBadge"
+                                >
                                     <span :class="$style.recurringDot" />
                                     <span>Повторяющаяся задача</span>
                                 </div>
@@ -56,67 +59,81 @@
                                 >
                                     {{ task.title }}
                                 </h3>
-                                <span v-if="hasSubtasks" :class="$style.subtasksBadge">
+                                <span v-if="!compact && hasSubtasks" :class="$style.subtasksBadge">
                                     {{ task.nestedSubtasksCount ?? 0 }}
                                 </span>
                                 <PriorityIndicator
                                     v-if="task.priority !== undefined"
                                     :priority="task.priority"
                                 />
+
+                                <div
+                                    v-if="compact && task.nextRun"
+                                    :class="$style.headerNextRun"
+                                >
+                                    {{ formatDateTime(task.nextRun) }}
+                                </div>
                             </div>
                         </div>
 
                         <div :class="$style.meta">
-                            <TypeBadge v-if="task.type" :type="task.type" />
-                            <StatusBadge :status="task.status" />
+                            <template v-if="!compact">
+                                <TypeBadge v-if="task.type" :type="task.type" />
+                                <StatusBadge :status="task.status" />
 
-                            <div v-if="task.nextRun" :class="$style.date">
-                                <IconClock :size="14" />
-                                <span>Next: {{ formatDate(task.nextRun) }}</span>
-                            </div>
-
-                            <div
-                                v-if="
-                                    task.type === 'SCHEDULED' &&
-                                    task.nextRun &&
-                                    scheduleTimeRemaining.total > 0
-                                "
-                                :class="$style.scheduleMeta"
-                            >
-                                <div :class="$style.scheduleTimer">
-                                    <span v-if="task.scheduleInfo" :class="$style.schedulePattern">
-                                        {{ task.scheduleInfo }}
-                                    </span>
-                                    <span :class="$style.scheduleLabel">через</span>
-                                    <span :class="$style.scheduleCountdown">
-                                        {{ scheduleTimeRemaining.days }}д
-                                        {{ scheduleTimeRemaining.hours }}ч
-                                        {{ scheduleTimeRemaining.minutes }}м
-                                    </span>
+                                <div v-if="task.nextRun" :class="$style.date">
+                                    <IconClock :size="14" />
+                                    <span>Next: {{ formatDate(task.nextRun) }}</span>
                                 </div>
 
                                 <div
-                                    v-if="telegramEnabled"
-                                    :class="$style.telegramBadge"
-                                    title="Notifications via Telegram"
+                                    v-if="
+                                        task.type === 'SCHEDULED' &&
+                                        task.nextRun &&
+                                        scheduleTimeRemaining.total > 0
+                                    "
+                                    :class="$style.scheduleMeta"
                                 >
-                                    <IconBrandTelegram :size="14" />
-                                    <span>Telegram</span>
-                                </div>
-                            </div>
+                                    <div :class="$style.scheduleTimer">
+                                        <span
+                                            v-if="task.scheduleInfo"
+                                            :class="$style.schedulePattern"
+                                        >
+                                            {{ task.scheduleInfo }}
+                                        </span>
+                                        <span :class="$style.scheduleLabel">через</span>
+                                        <span :class="$style.scheduleCountdown">
+                                            {{ scheduleTimeRemaining.days }}д
+                                            {{ scheduleTimeRemaining.hours }}ч
+                                            {{ scheduleTimeRemaining.minutes }}м
+                                        </span>
+                                    </div>
 
-                            <div v-if="task.scheduledFor" :class="$style.date">
-                                <IconCalendar :size="14" />
-                                <span>Due: {{ formatDate(task.scheduledFor) }}</span>
-                            </div>
-                            <div
-                                v-if="task.type === 'SCHEDULED' && task.currentInstance"
-                                :class="$style.instanceMeta"
-                            ></div>
+                                    <div
+                                        v-if="telegramEnabled"
+                                        :class="$style.telegramBadge"
+                                        title="Notifications via Telegram"
+                                    >
+                                        <IconBrandTelegram :size="14" />
+                                        <span>Telegram</span>
+                                    </div>
+                                </div>
+
+                                <div v-if="task.scheduledFor" :class="$style.date">
+                                    <IconCalendar :size="14" />
+                                    <span>Due: {{ formatDate(task.scheduledFor) }}</span>
+                                </div>
+                                <div
+                                    v-if="task.type === 'SCHEDULED' && task.currentInstance"
+                                    :class="$style.instanceMeta"
+                                ></div>
+                            </template>
+
+                            <template v-else></template>
                         </div>
 
                         <!-- Task Instance Stats -->
-                        <Transition name="stats-panel">
+                        <Transition v-if="!compact" name="stats-panel">
                             <div v-if="showStats" :class="$style.statsPanel">
                                 <div v-if="statsLoading" :class="$style.statsLoading">
                                     <div :class="$style.statsSpinner" />
@@ -166,7 +183,7 @@
 
                         <!-- Deadline Section -->
                         <div
-                            v-if="task.type === 'DEADLINE' && task.scheduledFor"
+                            v-if="!compact && task.type === 'DEADLINE' && task.scheduledFor"
                             :class="[$style.deadlineSection, $style[deadlineStatusClass]]"
                         >
                             <div :class="$style.deadlineCard">
@@ -335,7 +352,7 @@
 
                             <!-- Progress Entries -->
                             <div
-                                v-if="progressEntriesSource.length > 0"
+                                v-if="!compact && progressEntriesSource.length > 0"
                                 :class="$style.progressEntries"
                             >
                                 <div
@@ -359,7 +376,7 @@
                         </div>
 
                         <!-- Footer -->
-                        <div :class="$style.footer">
+                        <div v-if="!compact" :class="$style.footer">
                             <span>Created {{ formatDate(task.createdAt) }}</span>
                             <div :class="$style.footerActions">
                                 <button
@@ -401,7 +418,7 @@
                         </div>
 
                         <!-- Scheduled task complete confirm -->
-                        <Transition name="series-confirm">
+                        <Transition v-if="!compact" name="series-confirm">
                             <div v-if="showSeriesConfirm" :class="$style.seriesConfirm">
                                 <div :class="$style.seriesConfirmText">
                                     <span :class="$style.seriesConfirmTitle">
@@ -432,7 +449,7 @@
                         </Transition>
 
                         <!-- Cancel task confirm -->
-                        <Transition name="series-confirm">
+                        <Transition v-if="!compact" name="series-confirm">
                             <div
                                 v-if="showCancelConfirm"
                                 :class="[$style.seriesConfirm, $style.cancelConfirm]"
@@ -470,7 +487,7 @@
         </div>
 
         <!-- Subtasks -->
-        <Transition name="subtask">
+        <Transition v-if="!compact" name="subtask">
             <div v-if="hasSubtasks && showSubtasks && isExpanded" :class="$style.subtasks">
                 <TaskRow
                     v-for="subtask in task.subtasks"
@@ -518,6 +535,7 @@ const props = defineProps<{
     showSubtasks: boolean
     level: number
     telegramEnabled?: boolean
+    compact?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -700,6 +718,15 @@ function formatDate(date: string | Date) {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
+    })
+}
+
+function formatDateTime(date: string | Date) {
+    return new Date(date).toLocaleString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
     })
 }
 
