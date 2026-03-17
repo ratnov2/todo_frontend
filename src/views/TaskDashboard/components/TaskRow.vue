@@ -335,11 +335,11 @@
 
                             <!-- Progress Entries -->
                             <div
-                                v-if="task.progressEntries && task.progressEntries.length > 0"
+                                v-if="progressEntriesSource.length > 0"
                                 :class="$style.progressEntries"
                             >
                                 <div
-                                    v-for="entry in task.progressEntries.slice().reverse()"
+                                    v-for="entry in progressEntriesSource.slice().reverse()"
                                     :key="entry.id"
                                     :class="$style.progressEntry"
                                 >
@@ -464,7 +464,6 @@
                                 </div>
                             </div>
                         </Transition>
-
                     </div>
                 </div>
             </div>
@@ -523,7 +522,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'task-toggle', payload: { taskId: number; checked: boolean }): void
-    (e: 'progress-update', payload: { taskId: number; value: number }): void
+    (e: 'progress-update', payload: { taskId: number; value: number; instanceId?: number }): void
     (e: 'series-complete', payload: { taskId: number }): void
     (e: 'cancel-task', payload: { taskId: number }): void
 }>()
@@ -592,12 +591,24 @@ const toggleCheckbox = (e: Event) => {
 //     return null
 // })
 
-// Calculate current progress from progressEntries
+const progressEntriesSource = computed(() => {
+    // If currentInstance exists, progress is scoped to the instance
+    if (props.task.currentInstance?.progressEntries) {
+        return props.task.currentInstance.progressEntries
+    }
+    return props.task.progressEntries ?? []
+})
+
+// Calculate current progress
 const currentProgress = computed(() => {
-    if (!props.task.progressEntries || props.task.progressEntries.length === 0) {
+    // Prefer server-calculated total for instance (if present)
+    if (props.task.currentInstance && typeof props.task.currentInstance.progressTotal === 'number') {
+        return props.task.currentInstance.progressTotal
+    }
+    if (progressEntriesSource.value.length === 0) {
         return 0
     }
-    return props.task.progressEntries.reduce((sum, entry) => sum + entry.amount, 0)
+    return progressEntriesSource.value.reduce((sum, entry) => sum + entry.amount, 0)
 })
 
 // Calculate progress percentage
@@ -624,6 +635,7 @@ function handleAddProgress(amount: number) {
     emit('progress-update', {
         taskId: props.task.id,
         value: newValue,
+        instanceId: props.task.currentInstance?.id,
     })
 
     // Reset loading state after a short delay

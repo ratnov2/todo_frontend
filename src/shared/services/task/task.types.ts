@@ -60,6 +60,18 @@ export interface ITaskInstance {
     meta: Record<string, unknown> | null
     createdAt: string
     updatedAt: string
+    progressEntries?: {
+        id: number
+        taskId: number
+        taskProgressId: number | null
+        actorId: number | null
+        amount: number
+        groupDate: string | null
+        note: string
+        createdAt: string
+        taskInstanceId?: number | null
+    }[]
+    progressTotal?: number
 }
 
 export interface ICreateTaskProgressDto {
@@ -71,6 +83,7 @@ export interface ICreateTaskProgressDto {
 
 export interface ICreateProgressEntryDto {
     amount: number
+    taskInstanceId?: number
     actorId?: number
     groupDate?: string // ISO date string
     note?: string

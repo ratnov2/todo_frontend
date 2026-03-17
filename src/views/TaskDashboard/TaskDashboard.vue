@@ -385,12 +385,24 @@ const cancelTaskMutation = useMutation({
 
 const updateProgressMutation = useMutation({
     mutationKey: ['updateProgress'],
-    mutationFn: async (data: { taskId: number; value: number }) => {
+    mutationFn: async (data: { taskId: number; value: number; instanceId?: number }) => {
+        const task = tasks.value.find((t) => t.id === data.taskId)
+
+        const currentTotal = (() => {
+            if (data.instanceId && task?.currentInstance) {
+                if (typeof task.currentInstance.progressTotal === 'number') {
+                    return task.currentInstance.progressTotal
+                }
+                return task.currentInstance.progressEntries?.reduce((sum, e) => sum + e.amount, 0) ?? 0
+            }
+            return task?.progressEntries?.reduce((sum, e) => sum + e.amount, 0) ?? 0
+        })()
+
         await TaskService.addProgressEntry({
             taskId: data.taskId,
             dto: {
-                amount: data.value - (tasks.value.find((t) => t.id === data.taskId)?.progressEntries
-                    ?.reduce((sum, e) => sum + e.amount, 0) ?? 0),
+                amount: data.value - currentTotal,
+                taskInstanceId: data.instanceId,
             },
         })
     },
@@ -404,7 +416,7 @@ function handleTaskToggle(payload: { taskId: number; checked: boolean }) {
     updateTaskMutation.mutate(payload)
 }
 
-function handleProgressUpdate(payload: { taskId: number; value: number }) {
+function handleProgressUpdate(payload: { taskId: number; value: number; instanceId?: number }) {
     updateProgressMutation.mutate(payload)
 }
 
@@ -413,6 +425,8 @@ function handleSeriesComplete(payload: { taskId: number }) {
 }
 
 function handleCancelTask(payload: { taskId: number }) {
+    console.log('we')
+
     cancelTaskMutation.mutate(payload)
 }
 </script>

@@ -19,7 +19,7 @@
 import TaskRow from './TaskRow.vue'
 import type { Task } from '../types'
 
-const props = defineProps<{
+defineProps<{
     tasks: Task[]
     showSubtasks: boolean
     telegramEnabled: boolean
@@ -27,7 +27,7 @@ const props = defineProps<{
 
 defineEmits<{
     (e: 'task-toggle', payload: { taskId: number; checked: boolean }): void
-    (e: 'progress-update', payload: { taskId: number; value: number }): void
+    (e: 'progress-update', payload: { taskId: number; value: number; instanceId?: number }): void
     (e: 'series-complete', payload: { taskId: number }): void
     (e: 'cancel-task', payload: { taskId: number }): void
 }>()

@@ -42,7 +42,7 @@ export const TaskService = {
     },
     async updateTaskInstance(data: IReqPATCHTaskInstance) {
         const url = `${prefix}/instances/${data.instanceId}`
-        const { instanceId, ...payload } = data
+        const { instanceId: _instanceId, ...payload } = data
         return $authConfig.patch(url, payload) as unknown as IResPATCHTaskInstance
     },
     async deleteTask(data: IReqDELETETask) {
