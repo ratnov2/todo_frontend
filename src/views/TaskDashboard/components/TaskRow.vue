@@ -271,6 +271,17 @@
                                                 {{ task.progressMeta.unit }}
                                             </span>
                                             <span
+                                              v-if="task.type === 'SCHEDULED' && task.currentInstance && typeof task.currentInstance.scheduleTargetSoFar === 'number' && task.currentInstance.scheduleTargetSoFar > 0"
+                                              :class="[
+                                                $style.scheduleProgressTarget,
+                                                (task.currentInstance.scheduleDoneSoFar ?? 0) >= (task.currentInstance.scheduleTargetSoFar ?? 0)
+                                                  ? $style.scheduleProgressOk
+                                                  : $style.scheduleProgressFail,
+                                              ]"
+                                            >
+                                              {{ task.currentInstance.scheduleDoneSoFar }} / {{ task.currentInstance.scheduleTargetSoFar }} {{ task.progressMeta.unit }}
+                                            </span>
+                                            <span
                                                 v-if="task.progressMeta.targetValue"
                                                 :class="[
                                                     $style.multiplierBadge,
@@ -1242,6 +1253,29 @@ function handleEdit() {
 .progressTarget {
     font-size: 14px;
     color: #9ca3af;
+}
+
+.scheduleProgressTarget {
+    margin-left: 10px;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.scheduleProgressOk {
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.35);
+    background: rgba(34, 197, 94, 0.10);
+}
+
+.scheduleProgressFail {
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.10);
 }
 
 .multiplierBadge {

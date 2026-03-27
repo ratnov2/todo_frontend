@@ -72,7 +72,11 @@ export interface ITaskInstance {
         taskInstanceId?: number | null
     }[]
     progressTotal?: number
+    // For SCHEDULED tasks: overall progress across all instances up to end of today
+    scheduleDoneSoFar?: number
+    scheduleTargetSoFar?: number
 }
+
 
 export interface ICreateTaskProgressDto {
     targetValue: number
